@@ -3,310 +3,352 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
-    <title>Sistema de Contratación UDAL 2025</title>
+    <title>Sistema Integral de Gestión de Talento UDAL</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
     
     <style>
-        :root { --primary: #002e63; --accent: #a81c21; --bg: #f4f6f8; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding-bottom: 50px; }
-
-        /* --- INTERFAZ DE USUARIO --- */
-        .app-container { max-width: 800px; margin: 0 auto; background: white; min-height: 100vh; position: relative; z-index: 50; box-shadow: 0 0 15px rgba(0,0,0,0.1); }
-        header { background: var(--primary); color: white; padding: 20px; text-align: center; border-bottom: 4px solid var(--accent); }
+        :root {
+            --primary: #00205B;
+            --secondary: #A32429;
+            --accent: #BFA65A;
+            --bg: #f8f9fa;
+            --text: #333;
+        }
         
-        .view { display: none; padding: 25px; }
-        .view.active { display: block; }
-
-        input.form-control { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 5px; margin-bottom: 15px; box-sizing: border-box; }
+        * { box-sizing: border-box; }
         
-        .teacher-item { padding: 15px; border-bottom: 1px solid #eee; cursor: pointer; display: flex; justify-content: space-between; }
-        .teacher-item:hover { background: #eef2ff; font-weight: bold; color: var(--primary); }
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: var(--bg);
+            margin: 0;
+            padding: 0;
+            color: var(--text);
+            overflow-x: hidden;
+        }
 
-        .sig-pad-wrapper { border: 2px dashed #999; height: 200px; background: white; position: relative; border-radius: 5px; }
-        canvas { width: 100%; height: 100%; }
-        .clear-btn { position: absolute; top: 5px; right: 5px; background: #eee; border: none; padding: 5px 10px; cursor: pointer; }
-
-        .btn { width: 100%; padding: 15px; background: var(--primary); color: white; border: none; border-radius: 5px; font-size: 1.1rem; cursor: pointer; margin-top: 10px; }
-        .btn-secondary { background: #6c757d; }
-        .btn-success { background: #28a745; text-decoration: none; display: block; text-align: center; }
-
-        /* --- CONTRATO OCULTO (FORMATO ESTRICTO) --- */
-        #contract-ghost {
-            position: fixed;
-            top: 0;
-            left: -10000px; /* Invisible al usuario */
-            width: 816px; /* Ancho Carta Exacto (8.5in * 96dpi) */
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
             background: white;
-            z-index: -100;
-        }
-
-        #contract-content {
-            width: 100%;
-            padding: 50px 60px; /* Márgenes de la hoja */
-            box-sizing: border-box;
-            font-family: 'Times New Roman', serif;
-            font-size: 10.5pt; /* Tamaño ajustado para que quepa todo */
-            line-height: 1.25;
-            color: black;
-            text-align: justify;
-        }
-
-        /* Estilos del Texto Legal */
-        .doc-header { text-align: right; font-weight: bold; margin-bottom: 20px; }
-        .section-title { text-align: center; font-weight: bold; margin: 15px 0; letter-spacing: 1px; }
-        p { margin-bottom: 8px; margin-top: 0; }
-        .bold { font-weight: bold; }
-        .fill-data { font-weight: bold; text-decoration: underline; }
-        
-        /* Tablas */
-        .doc-table { width: 100%; border-collapse: collapse; margin: 15px 0; font-size: 10pt; }
-        .doc-table th, .doc-table td { border: 1px solid black; padding: 4px; text-align: center; }
-
-        /* Paginación Forzada */
-        .page-break { 
-            position: relative; 
-            min-height: 980px; /* Altura aprox de contenido útil en carta */
-            page-break-after: always; 
-            padding-bottom: 20px;
-            /* Borde inferior solo para debug, quitar en prod si se desea */
-            /* border-bottom: 1px solid red; */ 
-        }
-        .page-break:last-child { page-break-after: avoid; }
-
-        /* --- FIRMAS --- */
-        .signatures-area {
+            min-height: 100vh;
+            box-shadow: 0 4px 25px rgba(0,0,0,0.05);
             display: flex;
-            justify-content: space-between;
-            margin-top: 60px;
-            page-break-inside: avoid;
+            flex-direction: column;
+            position: relative;
+            z-index: 100;
+            background: white;
         }
         
-        .sig-box {
-            width: 45%;
-            border-top: 1px solid black;
+        /* Header APP */
+        header {
+            background: linear-gradient(135deg, var(--primary) 0%, #00153d 100%);
+            color: white;
+            padding: 20px;
             text-align: center;
-            padding-top: 10px;
-            position: relative;
+            border-bottom: 4px solid var(--accent);
+        }
+        header h1 { margin: 0; font-size: 1.2rem; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; }
+        header p { margin: 5px 0 0; font-size: 0.8rem; opacity: 0.9; color: var(--accent); }
+
+        /* Vistas */
+        .view { display: none; padding: 20px; flex-grow: 1; }
+        .view.active { display: block; animation: fadeIn 0.4s ease-out; }
+
+        /* Buscador */
+        .search-container { position: sticky; top: 0; background: white; padding-bottom: 15px; z-index: 30; border-bottom: 1px solid #eee; }
+        input[type="text"] { width: 100%; padding: 14px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 1rem; transition: 0.3s; background: #fafafa; }
+        input[type="text"]:focus { border-color: var(--primary); outline: none; background: white; }
+        
+        .teacher-list { max-height: 55vh; overflow-y: auto; margin-top: 10px; }
+        .teacher-item { padding: 15px; border-bottom: 1px solid #eee; cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: 0.2s; background: white; }
+        .teacher-item:hover { background: #f0f4ff; padding-left: 20px; }
+        .teacher-item strong { color: var(--primary); font-size: 0.95rem; }
+
+        /* Formulario */
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 6px; font-weight: 600; color: var(--primary); font-size: 0.85rem; }
+        input.form-control { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; font-size: 0.95rem; }
+        
+        .signature-container { border: 2px dashed #bbb; border-radius: 8px; background: #fff; position: relative; height: 250px; touch-action: none; }
+        canvas { width: 100%; height: 100%; }
+        .clear-sig { position: absolute; top: 10px; right: 10px; background: #eee; border: none; padding: 5px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.8rem; }
+
+        /* Botones */
+        .btn { width: 100%; padding: 15px; border: none; border-radius: 8px; font-size: 0.95rem; font-weight: 700; cursor: pointer; text-transform: uppercase; margin-top: 10px; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-whatsapp { background: #25D366; color: white; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .btn-secondary { background: white; color: #666; border: 2px solid #ddd; }
+
+        /* ----- ESTILOS DEL CONTRATO ----- */
+        #contract-wrapper {
+            position: absolute; top: 0; left: 0; z-index: -1; 
+            width: 816px; background: white; visibility: hidden; 
+        }
+        #contract-wrapper.generating { visibility: visible; }
+
+        #contract-template {
+            width: 816px; 
+            background: white; 
+            color: black;
+            font-family: 'Times New Roman', serif;
+            text-align: justify;
+            box-sizing: border-box;
+            padding: 0;
         }
 
-        /* Firma Principal (Abajo) */
-        .img-sig-main {
+        /* PAGINA 1: CONTRATO OFICIO */
+        .pdf-page-contract {
+            width: 100%;
+            height: 1344px; /* Altura Oficio */
+            padding: 40px 50px; 
+            position: relative;
+            page-break-after: always;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* PAGINA 2: ANEXO OFICIO (Ajuste para evitar hoja blanca) */
+        .pdf-page-annex {
+            width: 100%;
+            /* Usamos min-height y auto para que no fuerce un pixel extra */
+            min-height: 1300px; 
+            height: auto;
+            padding: 40px 50px;
+            position: relative;
+            page-break-after: avoid; 
+            margin-bottom: 0;
+            padding-bottom: 0;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* FUENTE 11px */
+        .content-body {
+            font-size: 11px; 
+            line-height: 1.2; 
+        }
+        
+        p { margin: 0 0 6px 0; text-indent: 0; }
+        
+        .section-title { 
+            font-size: 11px; 
+            text-align: center; 
+            font-weight: bold; 
+            margin: 10px 0; 
+            text-transform: uppercase; 
+            letter-spacing: 1px;
+        }
+        
+        .contract-table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 10px; }
+        .contract-table th, .contract-table td { border: 1px solid black; padding: 4px; text-align: center; vertical-align: middle; }
+        
+        /* Contenedores de Firma */
+        .signature-grid { display: flex; justify-content: space-between; margin-top: 25px; text-align: center; width: 100%; font-size: 10px; }
+        .sig-box { width: 40%; border-top: 1px solid black; padding-top: 5px; position: relative; }
+        
+        /* Imágenes de Firma */
+        .signature-fill {
+            mix-blend-mode: multiply;
             position: absolute;
-            bottom: 45px; /* Levantada 0.5cm aprox */
+            z-index: 2000; 
+        }
+
+        /* Firma Principal (Más grande y más abajo) */
+        .sig-main {
+            bottom: 0px; /* Bajado al máximo (sobre el nombre) */
             left: 50%;
             transform: translateX(-50%);
-            width: 250px; /* 20% más grande que antes */
-            height: auto;
-            mix-blend-mode: multiply;
+            width: 420px; /* Aumentado 30% desde 320px aprox */
         }
 
-        /* Firma Lateral (Rúbrica) */
-        /* Esta imagen se posiciona absoluta respecto al .page-break */
-        .img-rubric-side {
-            position: absolute;
-            right: 0px; /* Pegada al margen derecho del contenedor (que ya tiene padding) */
-            top: 150px; /* Altura arbitraria visible */
-            width: 150px; /* Tamaño visible */
-            height: auto;
-            transform: rotate(-15deg);
-            opacity: 0.8;
-            mix-blend-mode: multiply;
-            z-index: 99;
-        }
+        .fill-data { font-weight: bold; text-transform: uppercase; }
 
+        #loader {
+            position: fixed; top:0; left:0; width:100%; height:100%;
+            background: rgba(0,0,0,0.8); z-index: 9999;
+            display: none; justify-content: center; align-items: center; color: white;
+            flex-direction: column;
+        }
     </style>
 </head>
 <body>
 
-<div class="app-container">
+<div id="loader">
+    <div style="font-size: 40px;">⏳</div>
+    <h3>Generando PDF...</h3>
+</div>
+
+<div class="container">
     <header>
-        <h1>Generador de Contratos UDAL</h1>
+        <h1>UDAL | Gestión de Talento</h1>
+        <p>Contratación Docente 2025</p>
     </header>
 
-    <div id="view-search" class="view active">
-        <label>Paso 1: Buscar Docente</label>
-        <input type="text" id="search-input" class="form-control" placeholder="Escriba los apellidos..." onkeyup="filterTeachers()">
-        <div id="teacher-list"></div>
+    <div id="view-select" class="view active">
+        <div class="search-container">
+            <label>Paso 1: Identifícate</label>
+            <input type="text" id="search-input" placeholder="Escribe tus apellidos..." onkeyup="filterList()">
+        </div>
+        <div id="list-container" class="teacher-list"></div>
     </div>
 
     <div id="view-form" class="view">
-        <h3 style="text-align:center; color:var(--primary)" id="lbl-name"></h3>
-        
-        <label>Domicilio:</label>
-        <input type="text" id="inp-dom" class="form-control">
-        <label>RFC:</label>
-        <input type="text" id="inp-rfc" class="form-control" style="text-transform: uppercase;">
-        <label>CURP:</label>
-        <input type="text" id="inp-curp" class="form-control" style="text-transform: uppercase;">
-        
-        <label>Firma:</label>
-        <div class="sig-pad-wrapper">
-            <canvas id="sig-canvas"></canvas>
-            <button class="clear-btn" onclick="clearPad()">Borrar</button>
+        <h3 style="text-align:center; color:var(--primary);">Verifica tus datos</h3>
+        <p style="text-align:center; color:#666; margin-bottom:20px;">Docente: <strong id="lbl-name"></strong></p>
+
+        <div class="form-group">
+            <label>Domicilio Completo:</label>
+            <input type="text" id="inp-address" class="form-control" placeholder="Calle, Número, Colonia, Ciudad, CP">
         </div>
-        
-        <button class="btn" onclick="generatePDF()">GENERAR CONTRATO</button>
-        <button class="btn btn-secondary" onclick="showView('search')">Volver</button>
+        <div class="form-group">
+            <label>RFC:</label>
+            <input type="text" id="inp-rfc" class="form-control" placeholder="AAAA000000XXX" style="text-transform: uppercase;">
+        </div>
+        <div class="form-group">
+            <label>CURP:</label>
+            <input type="text" id="inp-curp" class="form-control" placeholder="AAAA000000H..." style="text-transform: uppercase;">
+        </div>
+
+        <div class="form-group">
+            <label>Tu Firma (Requerida):</label>
+            <div class="signature-container">
+                <canvas id="sig-canvas"></canvas>
+                <button class="clear-sig" onclick="clearPad()">Borrar</button>
+            </div>
+            <small style="text-align:center; display:block; color:#888;">Firma dentro del recuadro</small>
+        </div>
+
+        <button class="btn btn-primary" onclick="generateContract()">Generar Contrato</button>
+        <button class="btn btn-secondary" onclick="showView('view-select')">Regresar</button>
     </div>
 
     <div id="view-success" class="view" style="text-align:center;">
-        <h2 style="color:green">¡Contrato Generado!</h2>
-        <p>El PDF se ha descargado a tu dispositivo.</p>
-        <div style="background:#e8f5e9; padding:15px; margin:20px 0; border-radius:5px; text-align:left;">
-            <strong>Siguiente paso:</strong><br>
-            Envía el archivo PDF descargado por WhatsApp al Director Académico.
+        <h2 style="color:#25D366; font-size:2rem;">¡Listo!</h2>
+        <p>El contrato se ha descargado a tu dispositivo.</p>
+        
+        <div style="background:#fff3cd; color:#856404; padding:15px; border-radius:5px; margin:20px 0; text-align:left; font-size:0.9rem;">
+            <strong>PASO FINAL OBLIGATORIO:</strong><br>
+            1. Presiona el botón de WhatsApp abajo.<br>
+            2. En el chat, presiona el clip (📎) o signo de más (+).<br>
+            3. Selecciona el archivo PDF que se acaba de descargar y envíalo.
         </div>
-        <a id="wa-link" href="#" target="_blank" class="btn btn-success">Enviar WhatsApp</a>
-        <button class="btn btn-secondary" onclick="downloadPDF()">Descargar otra vez</button>
+        
+        <a id="wa-link" href="#" target="_blank" class="btn btn-whatsapp">
+            Enviar por WhatsApp
+        </a>
+        <button class="btn btn-secondary" onclick="downloadPDF()">Volver a Descargar PDF</button>
     </div>
 </div>
 
-<div id="contract-ghost">
-    <div id="contract-content">
+<div id="contract-wrapper">
+    <div id="contract-template">
         
-        <div class="page-break">
-            <img class="img-rubric-side sig-img-target" style="top: 100px;">
-
-            <div class="doc-header">CONTRATO DE PRESTACIÓN DE SERVICIOS PROFESIONALES INDEPENDIENTES POR HONORARIOS</div>
+        <div class="pdf-page-contract">
             
-            <p>QUE CELEBRAN, POR UNA PARTE, <strong>UNIVERSIDAD DE AMÉRICA LATINA</strong>, A LA QUE EN LO SUCESIVO SE LE DENOMINARÁ “LA INSTITUCIÓN”, REPRESENTADA EN ESTE ACTO SEGÚN SE DETALLA EN EL APARTADO DE DECLARACIONES;</p>
-            <p>Y POR LA OTRA PARTE, EL/LA C. <span class="fill-name fill-data" style="text-transform: uppercase;"></span>, A QUIEN EN LO SUCESIVO SE LE DENOMINARÁ “EL PRESTADOR”, MISMOS QUE SE SOMETEN AL TENOR DE LAS SIGUIENTES DECLARACIONES Y CLÁUSULAS:</p>
-
-            <div class="section-title">D E C L A R A C I O N E S</div>
-
-            <p><strong>I. DECLARA “LA INSTITUCIÓN”:</strong></p>
-            <p>Ser una Asociación Civil legalmente constituida de acuerdo a las leyes del país.</p>
-            <p>Representada en este acto por el <strong>Ingeniero Jesús López Chargoy</strong>, persona que se encuentra facultada para celebrar y suscribir el presente contrato de conformidad con el Instrumento Notarial Número: 35923, Volumen CDXLVIII, de fecha 24 de Mayo de 1996, celebrado ante la fe del Licenciado Jorge Hernández Madrid, titular de la Notaría Pública Número 4 de la Ciudad Puebla, Puebla1111.</p>
-            <p>Su Registro Federal de Contribuyentes es <strong>PAC960524FL3</strong>.</p>
-            <p>Que tiene como fines dedicarse a toda clase de actividades relativas a la educación, a la investigación científica y a la difusión de la cultura y el deporte.</p>
-            <p>Que para cumplir con sus fines, requiere temporalmente contar con los servicios de una persona física con la pericia y conocimientos necesarios, por lo que ha determinado contratar a “EL PRESTADOR” para llevar a cabo servicios no subordinados regidos por la legislación civil.</p>
-            <p>Señala como domicilio legal para efectos de este contrato: El ubicado en 17 Poniente 309, Col. El Carmen, Puebla, Pue., independientemente de que los servicios contratados se presten en dicho domicilio o en alguna de sus sucursales o planteles, tales como los ubicados en Calle 6 B Sur 3106, Ladrillera de Benítez; Calle 3 Sur 4116, Gabriel Pastor 1ra Secc; o Av. 25 Pte 315, Héroe de Nacozari, en Heroica Puebla de Zaragoza, Pue.</p>
-
-            <p><strong>II. DECLARA “EL PRESTADOR”:</strong></p>
-            <p>Ser una persona física en pleno ejercicio de sus derechos, con capacidad para celebrar el presente contrato.</p>
-            <p>Contar con los conocimientos técnicos, teóricos, científicos y pedagógicos, así como la experiencia suficiente para desarrollar los servicios profesionales objeto del presente contrato.</p>
-            <p>Estar registrado ante las autoridades fiscales con el Registro Federal de Contribuyentes (RFC) número <span class="fill-rfc fill-data" style="text-transform: uppercase;"></span>, manifestando bajo protesta de decir verdad conocer y entender las obligaciones fiscales derivadas de su régimen.</p>
-            <p>Que las actividades objeto del presente contrato no representan su única o principal fuente de ingresos.</p>
-            <p>Señalar como su domicilio el ubicado en <span class="fill-dom fill-data"></span>.</p>
-            <p>Identificarse con identificación oficial que obra en su expediente docente número y contar con Clave Única de Registro de Población (CURP) <span class="fill-curp fill-data" style="text-transform: uppercase;"></span>.</p>
-            <p><strong>Que las firmas digitales plasmadas en el contrato se reconocen y ratifican desde este momento como originales en virtud de que es su deseo firmar el contrato de esta forma.</strong></p>
-
-            <p><strong>III. DECLARAN AMBAS PARTES:</strong></p>
-            <p>ÚNICO.- Que se reconocen mutuamente la personalidad y capacidad legal con la que comparecen, manifestando su consentimiento para obligarse en los términos de este contrato, cuyo contenido es producto de la buena fe.</p>
-        </div>
-
-        <div class="page-break">
-            <img class="img-rubric-side sig-img-target" style="top: 50px;">
-
-            <div class="section-title">C L Á U S U L A S</div>
-
-            <p><strong>PRIMERA. OBJETO Y VIGENCIA.</strong> “LA INSTITUCIÓN” encomienda a “EL PRESTADOR”, y este se obliga a prestar sus servicios profesionales independientes de forma personal. Los servicios específicos, materias y actividades se detallan en el Anexo 1 de este contrato. La vigencia del presente instrumento será:</p>
-            <p><strong>Opción B (UDAL y afiliadas): Del día 18 de agosto de 2025 al 29 de enero de 2026.</strong></p>
-            <p>Al término de la vigencia, este contrato no se considerará renovado tácita ni automáticamente bajo ninguna circunstancia. La continuación de la prestación de servicios requerirá indispensablemente la celebración de un nuevo contrato.</p>
-
-            <p><strong>SEGUNDA. AUSENCIA DE VÍNCULO LABORAL.</strong> Ambas partes reconocen que el presente contrato es de naturaleza estrictamente civil. No establece ni genera una relación de trabajo subordinado. En consecuencia, “EL PRESTADOR” no será considerado trabajador para ningún efecto legal y no le son aplicables las disposiciones de la Ley Federal del Trabajo ni de la Ley del Instituto Mexicano del Seguro Social, por lo que no existe obligación recíproca alguna en materia de seguridad social.</p>
-
-            <p><strong>TERCERA. OBLIGACIONES DE “EL PRESTADOR”.</strong> “EL PRESTADOR” se obliga a: a) Desempeñar los servicios con la más alta diligencia, profesionalismo, ética y eficiencia, apegándose a los planes de estudio, calendarios y reglamentos internos de “LA INSTITUCIÓN”. b) Resguardar y supervisar el equipo, materiales y bienes que “LA INSTITUCIÓN” le facilite para el desempeño de sus servicios, asumiendo la responsabilidad de reponer cualquier pérdida o menoscabo que estos sufran por negligencia, dolo o mal uso de su parte. c) Abstenerse de organizar, promover o realizar actos ajenos a los fines académicos de “LA INSTITUCIÓN” dentro de sus instalaciones o utilizando su nombre. d) Cumplir cabalmente con las obligaciones que asuma como sinodal, asesor o miembro de cuerpos colegiados.</p>
-
-            <p><strong>CUARTA. HONORARIOS Y FORMA DE PAGO.</strong> “LA INSTITUCIÓN” se compromete a pagar los honorarios pactados, previa entrega por parte de “EL PRESTADOR” del Comprobante Fiscal Digital por Internet (CFDI) correspondiente. Dicho pago se realizará siguiendo al pie de la letra el procedimiento, fechas y términos establecidos en el calendario de pagos que “EL PRESTADOR” manifiesta conocer, y siempre que el comprobante cumpla con todos los requisitos fiscales vigentes. “LA INSTITUCIÓN” efectuará las retenciones de impuestos que marque la legislación aplicable.</p>
-
-            <p><strong>QUINTA. AUTONOMÍA CONTRACTUAL.</strong> La celebración del presente contrato no genera obligación alguna para “LA INSTITUCIÓN” de mantener o replicar las mismas condiciones (carga de materias/horas, monto de honorarios, etc.) en futuros periodos de contratación.</p>
-
-            <p><strong>SEXTA. CONFIDENCIALIDAD.</strong> “EL PRESTADOR” se obliga a guardar la más estricta confidencialidad respecto a la información interna, documentos, procedimientos, datos personales de alumnos o cualquier otro dato sensible al que tenga acceso por motivo de este contrato. Esta obligación subsistirá aún después de haber finalizado la vigencia del presente instrumento.</p>
-
-            <p><strong>SÉPTIMA. CAUSAS DE RESCISIÓN.</strong> “LA INSTITUCIÓN” podrá rescindir administrativamente el presente contrato, sin necesidad de procedimiento judicial y sin responsabilidad alguna para ella, por cualquiera de las siguientes causas imputables a “EL PRESTADOR”: a) Prestar los servicios de forma inadecuada, deficiente o contraria a lo estipulado en este contrato, los reglamentos o la ética profesional. b) Suspender injustificadamente la prestación de los servicios. c) Incurrir en un evidente conflicto de intereses, como prestar servicios a instituciones competidoras sin autorización previa y por escrito. d) Presentar documentación o información falsa. e) Solicitar o recibir dinero, bienes o favores de los estudiantes a cambio de beneficios académicos. f) Incurrir en faltas de probidad, honradez o llevar a cabo actos que atenten contra el prestigio o la filosofía de “LA INSTITUCIÓN”. g) Estar involucrado, señalado o investigado por hechos o actos ilícitos o contrarios a la moral, independientemente de que se acredite o no su responsabilidad legal final en los mismos.</p>
-
-            <p><strong>OCTAVA. TERMINACIÓN ANTICIPADA.</strong> “LA INSTITUCIÓN” podrá dar por terminado anticipadamente el presente contrato en cualquier momento y sin necesidad de que medie resolución judicial o aviso previo, debiendo únicamente cubrir los honorarios que correspondan a los servicios efectivamente prestados y recibidos a su entera satisfacción. Por su parte, “EL PRESTADOR” podrá solicitar la terminación anticipada, previo aviso por escrito con al menos siete días naturales de anticipación, reservándose “LA INSTITUCIÓN” el derecho de aceptar dicha terminación.</p>
-
-            <p><strong>NOVENA. ACCIONES LEGALES Y JURISDICCIÓN.</strong> En caso de cualquier controversia judicial iniciada por “EL PRESTADOR”, “LA INSTITUCIÓN” se reserva el derecho de contrademandar por los daños y perjuicios que dicha acción le ocasione. Para la interpretación y cumplimiento de este contrato, las partes se someten expresamente a la jurisdicción de los tribunales competentes de la Ciudad de Puebla, Puebla, renunciando a cualquier fuero que por razón de sus domicilios presentes o futuros pudiera corresponderles.</p>
-
-            <p>Leído que fue el presente contrato por las partes y enteradas de su contenido y alcance legal, lo firman por duplicado en la ciudad de Puebla, Pue a los 18 días del mes de Agosto de 2025.</p>
-
-            <div class="signatures-area">
-                <div class="sig-box">
-                    <br><br><br>
-                    <strong>JESUS LÓPEZ CHARGOY</strong><br>
-                    “LA INSTITUCIÓN”
-                </div>
-                <div class="sig-box">
-                    <img class="img-sig-main sig-img-target">
-                    <br><br><br>
-                    <strong class="fill-name" style="text-transform: uppercase;"></strong><br>
-                    “EL PRESTADOR”
-                </div>
+            <div style="text-align: center; font-weight: bold; margin-bottom: 10px; font-size: 11px;">
+                CONTRATO DE PRESTACIÓN DE SERVICIOS PROFESIONALES INDEPENDIENTES POR HONORARIOS
             </div>
             
-            <br>
-            
-            <div class="signatures-area">
-                <div class="sig-box">
-                    <br><br><br>
-                    <strong>JULIO CÉSAR GÓMEZ QUINTERO</strong><br>
-                    TESTIGO
+            <div class="content-body">
+                <p>QUE CELEBRAN, POR UNA PARTE, <strong>PROMOTORA DEL ARTE Y LA CULTURA DE PUEBLA, DIVISIÓN ESTUDIOS SUPERIORES A.C Y/O UDAL UNIVERSIDAD DE AMÉRICA LATINA</strong>, A LA QUE EN LO SUCESIVO SE LE DENOMINARÁ “LA INSTITUCIÓN”, REPRESENTADA EN ESTE ACTO POR EL RECTOR EL <strong>INGENIERO JESÚS LÓPEZ CHARGOY</strong>; Y POR LA OTRA PARTE, EL/LA C. <span id="c-name" class="fill-data"></span>, A QUIEN EN LO SUCESIVO SE LE DENOMINARÁ “EL PRESTADOR”, MISMOS QUE SE SOMETEN AL TENOR DE LAS SIGUIENTES DECLARACIONES Y CLÁUSULAS:</p>
+
+                <div class="section-title">D E C L A R A C I O N E S</div>
+                
+                <p><strong>I. DECLARA “LA INSTITUCIÓN”:</strong> Ser una Asociación Civil legalmente constituida de acuerdo a las leyes del país. Representada en este acto por el <strong>Ingeniero Jesús López Chargoy</strong>, persona que se encuentra facultada para celebrar y suscribir el presente contrato de conformidad con el Instrumento Notarial Número: 35923, Volumen CDXLVIII, de fecha 24 de Mayo de 1996, celebrado ante la fe del Licenciado Jorge Hernández Madrid, titular de la Notaría Pública Número 4 de la Ciudad Puebla, Puebla. Su Registro Federal de Contribuyentes es <strong>PAC960524FL3</strong>. Que tiene como fines dedicarse a toda clase de actividades relativas a la educación, a la investigación científica y a la difusión de la cultura y el deporte. Que para cumplir con sus fines, requiere temporalmente contar con los servicios de una persona física con la pericia y conocimientos necesarios, por lo que ha determinado contratar a “EL PRESTADOR” para llevar a cabo servicios no subordinados regidos por la legislación civil. Señala como domicilio legal para efectos de este contrato: El ubicado en 17 Poniente 309, Col. El Carmen, Puebla, Pue., independientemente de que los servicios contratados se presten en dicho domicilio o en planteles ubicados en 6 B Sur 3106, Col. Ladrillera de Benítez; Calle 3 Sur 4116, Gabriel Pastor 1ra Secc; o Av. 25 Pte 315, Héroe de Nacozari, en Heroica Puebla de Zaragoza, Pue.</p>
+
+                <p><strong>II. DECLARA “EL PRESTADOR”:</strong> Ser una persona física en pleno ejercicio de sus derechos, con capacidad para celebrar el presente contrato. Contar con los conocimientos técnicos, teóricos, científicos y pedagógicos, así como la experiencia suficiente para desarrollar los servicios profesionales objeto del presente contrato. Estar registrado ante las autoridades fiscales con el Registro Federal de Contribuyentes (RFC) número <span id="c-rfc" class="fill-data"></span>, manifestando bajo protesta de decir verdad conocer y entender las obligaciones fiscales derivadas de su régimen. Que las actividades objeto del presente contrato no representan su única o principal fuente de ingresos. Señalar como su domicilio el ubicado en <span id="c-address" class="fill-data"></span>. Identificarse con identificación oficial que obra en su expediente docente número y contar con Clave Única de Registro de Población (CURP) <span id="c-curp" class="fill-data"></span>. Que reconoce y ratifica las firmas plasmadas digitalmente en el contrato como propias toda vez que es el medio elegido por ambas partes para facilidad y conveniencia.</p>
+
+                <p><strong>III. DECLARAN AMBAS PARTES:</strong> ÚNICO.- Que se reconocen mutuamente la personalidad y capacidad legal con la que comparecen, manifestando su consentimiento para obligarse en los términos de este contrato, cuyo contenido es producto de la buena fe.</p>
+
+                <div class="section-title">C L Á U S U L A S</div>
+
+                <p><strong>PRIMERA. OBJETO Y VIGENCIA.</strong> “LA INSTITUCIÓN” encomienda a “EL PRESTADOR”, y este se obliga a prestar sus servicios profesionales independientes de forma personal. Los servicios específicos, materias y actividades se detallan en el Anexo 1 de este contrato. La vigencia del presente instrumento será: <strong>Del día 18 de agosto de 2025 al 29 de enero de 2026.</strong> Al término de la vigencia, este contrato no se considerará renovado tácita ni automáticamente bajo ninguna circunstancia. La continuación de la prestación de servicios requerirá indispensablemente la celebración de un nuevo contrato.</p>
+
+                <p><strong>SEGUNDA. AUSENCIA DE VÍNCULO LABORAL.</strong> Ambas partes reconocen que el presente contrato es de naturaleza estrictamente civil. No establece ni genera una relación de trabajo subordinado. En consecuencia, “EL PRESTADOR” no será considerado trabajador para ningún efecto legal y no le son aplicables las disposiciones de la Ley Federal del Trabajo ni de la Ley del Instituto Mexicano del Seguro Social, por lo que no existe obligación recíproca alguna en materia de seguridad social.</p>
+
+                <p><strong>TERCERA. OBLIGACIONES DE “EL PRESTADOR”.</strong> “EL PRESTADOR” se obliga a: a) Desempeñar los servicios con la más alta diligencia, profesionalismo, ética y eficiencia, apegándose a los planes de estudio, calendarios y reglamentos internos de “LA INSTITUCIÓN”. b) Resguardar y supervisar el equipo, materiales y bienes que “LA INSTITUCIÓN” le facilite para el desempeño de sus servicios, asumiendo la responsabilidad de reponer cualquier pérdida o menoscabo que estos sufran por negligencia, dolo o mal uso de su parte. c) Abstenerse de organizar, promover o realizar actos ajenos a los fines académicos de “LA INSTITUCIÓN” dentro de sus instalaciones o utilizando su nombre. d) Cumplir cabalmente con las obligaciones que asuma como sinodal, asesor o miembro de cuerpos colegiados.</p>
+                
+                <p><strong>CUARTA. HONORARIOS Y FORMA DE PAGO.</strong> “LA INSTITUCIÓN” se compromete a pagar los honorarios pactados, previa entrega por parte de “EL PRESTADOR” del Comprobante Fiscal Digital por Internet (CFDI) correspondiente. Dicho pago se realizará siguiendo al pie de la letra el procedimiento, fechas y términos establecidos en el calendario de pagos que “EL PRESTADOR” manifiesta conocer, y siempre que el comprobante cumpla con todos los requisitos fiscales vigentes. “LA INSTITUCIÓN” efectuará las retenciones de impuestos que marque la legislación aplicable. En el supuesto de que “EL PRESTADOR” deje su carga académica o cause baja antes de la finalización del periodo contratado o de los periodos estipulados para la emisión de facturas, no podrá solicitar el pago de los honorarios pendientes de manera inmediata. De igual forma, si “EL PRESTADOR” no genera su CFDI a tiempo, no envía las correcciones solicitadas oportunamente o incumple de cualquier otra manera con el procedimiento de pago, la liquidación de los honorarios pendientes quedará sujeta al proceso, reprogramación y autorización de “LA INSTITUCIÓN”.</p>
+
+                <p><strong>QUINTA. AUTONOMÍA CONTRACTUAL</strong> La celebración del presente contrato no genera obligación alguna para “LA INSTITUCIÓN” de mantener o replicar las mismas condiciones (carga de materias/horas, monto de honorarios, etc.) en futuros periodos de contratación.</p>
+
+                <p><strong>SEXTA. CONFIDENCIALIDAD.</strong> “EL PRESTADOR” se obliga a guardar la más estricta confidencialidad respecto a la información interna, documentos, procedimientos, datos personales y/o sensibles a los que tenga acceso por motivo de este contrato. Esta obligación subsistirá aún después de haber finalizado la vigencia del presente instrumento.</p>
+
+                <p><strong>SÉPTIMA. CAUSAS DE RESCISIÓN.</strong> “LA INSTITUCIÓN” podrá rescindir administrativamente el presente contrato, sin necesidad de procedimiento judicial y sin responsabilidad alguna para ella, por cualquiera de las siguientes causas imputables a “EL PRESTADOR”: a) Prestar los servicios de forma inadecuada, deficiente o contraria a lo estipulado en este contrato, los reglamentos o la ética profesional. b) Suspender injustificadamente la prestación de los servicios. c) Incurrir en un evidente conflicto de intereses, como prestar servicios a instituciones competidoras sin autorización previa y por escrito. d) Presentar documentación o información falsa. e) Solicitar o recibir dinero, bienes o favores de los estudiantes a cambio de beneficios académicos. f) Incurrir en faltas de probidad, honradez o llevar a cabo actos que atenten contra el prestigio o la filosofía de “LA INSTITUCIÓN”. g) Estar involucrado, señalado o investigado por hechos o actos ilícitos o contrarios a la moral, independientemente de que se acredite o no su responsabilidad legal final en los mismos.</p>
+
+                <p><strong>OCTAVA. TERMINACIÓN ANTICIPADA.</strong> “LA INSTITUCIÓN” podrá dar por terminado anticipadamente el presente contrato en cualquier momento y sin necesidad de que medie resolución judicial o aviso previo, debiendo únicamente cubrir los honorarios que correspondan a los servicios efectivamente prestados y recibidos a su entera satisfacción. Por su parte, “EL PRESTADOR” podrá solicitar la terminación anticipada, previo aviso por escrito con al menos siete días naturales de anticipación, reservándose “LA INSTITUCIÓN” el derecho de aceptar dicha terminación.</p>
+
+                <p><strong>NOVENA. ACCIONES LEGALES Y JURISDICCIÓN.</strong> En caso de cualquier controversia judicial iniciada por “EL PRESTADOR”, “LA INSTITUCIÓN” se reserva el derecho de contrademandar por los daños y perjuicios que dicha acción le ocasione. Lo anterior, con independencia de las acciones civiles, penales o de cualquier otra índole que “LA INSTITUCIÓN” pueda iniciar en contra de “EL PRESTADOR” por incumplimiento del presente contrato. Para la interpretación y cumplimiento de este contrato, las partes se someten expresamente a la jurisdicción de los tribunales competentes de la Ciudad de Puebla, Puebla, renunciando a cualquier fuero que por razón de sus domicilios presentes o futuros pudiera corresponderles.</p>
+                
+                <p style="margin-top:15px;">Leído que fue este contrato por las partes y enteradas de su contenido y alcance, firman por duplicado en la ciudad de Puebla, Pue a los 18 días del mes de Agosto de 2025.</p>
+
+                <div class="signature-grid">
+                    <div class="sig-box">
+                        <strong>JESUS LÓPEZ CHARGOY</strong><br>“LA INSTITUCIÓN”
+                    </div>
+                    <div class="sig-box">
+                        <img class="signature-fill sig-main" src="">
+                        <strong id="c-name-sig" style="text-transform: uppercase;"></strong><br>“EL PRESTADOR”
+                    </div>
                 </div>
-                <div class="sig-box">
-                    <br><br><br>
-                    <strong>MIRNA LORENA GÓMEZ PÉREZ</strong><br>
-                    TESTIGO
+                
+                <div class="signature-grid" style="margin-top:20px;">
+                    <div class="sig-box">
+                        <strong>JULIO CÉSAR GÓMEZ QUINTERO</strong><br>TESTIGO
+                    </div>
+                    <div class="sig-box">
+                        <strong>MIRNA LORENA GÓMEZ PÉREZ</strong><br>TESTIGO
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div class="page-break">
-            <img class="img-rubric-side sig-img-target" style="top: 50px;">
+        <div class="pdf-page-annex">
+            
+            <div class="section-title">ANEXO 1<br>SERVICIOS PROFESIONALES Y HONORARIOS</div>
+            
+            <div class="content-body">
+                <p>El presente Anexo forma parte integral del Contrato de Prestación de Servicios Profesionales Independientes celebrado entre la “INSTITUCIÓN” y el “PRESTADOR” a quienes se hace referencia en dicho instrumento.</p>
+                
+                <p><strong>1. CARGA ACADÉMICA</strong></p>
+                <table class="contract-table">
+                    <tr>
+                        <th>Materia Asignada</th>
+                        <th>Nivel / Programa</th>
+                        <th>Horas por Semana</th>
+                        <th>Plantel</th>
+                    </tr>
+                    <tr>
+                        <td>ASIGNACIÓN MÚLTIPLE</td>
+                        <td>LICENCIATURAS</td>
+                        <td id="c-hours"></td>
+                        <td>DIVERSOS / UDAL</td>
+                    </tr>
+                </table>
+                
+                <p><strong>2. ACTIVIDADES ACADÉMICAS ADICIONALES</strong></p>
+                <p>Marcar con una "X" las actividades convenidas: [ ] Asesoría de Tesis [ ] Participación en Cuerpos Colegiados [ ] Impartición de Cursos y/o Talleres</p>
+                
+                <p><strong>3. CONTRAPRESTACIÓN ECONÓMICA (HONORARIOS)</strong></p>
+                <p><strong>3.1. Por Hora-Clase (Carga Académica):</strong> La contraprestación que “LA INSTITUCIÓN” pagará a “EL PRESTADOR” por los servicios descritos en la tabla de Carga Académica será de <strong>$<span id="c-rate"></span> M.N.</strong> por cada hora-clase, más el Impuesto al Valor Agregado (IVA) correspondiente. Total Semanal Estimado: <strong>$<span id="c-total"></span> M.N.</strong></p>
+                
+                <p><strong>3.2. Por Actividades Adicionales:</strong> Monto: $ 0</p>
+                
+                <p>El pago de todos los honorarios se realizará de conformidad con los procedimientos administrativos y términos establecidos en la Cláusula Cuarta del Contrato. Las partes manifiestan su conformidad con los términos descritos en el presente Anexo, el cual firman en la misma fecha que el Contrato principal.</p>
 
-            <div class="section-title">ANEXO 1</div>
-            <div class="section-title">SERVICIOS PROFESIONALES Y HONORARIOS</div>
-            
-            <p>El presente Anexo forma parte integral del Contrato de Prestación de Servicios Profesionales Independientes celebrado entre la “INSTITUCIÓN” y el “PRESTADOR” a quienes se hace referencia en dicho instrumento. Este documento detalla los servicios y la contraprestación económica convenidos.</p>
-            
-            <p><strong>1. CARGA ACADÉMICA</strong></p>
-            <table class="doc-table">
-                <tr>
-                    <th>Materia Asignada</th>
-                    <th>Nivel / Programa</th>
-                    <th>Horas por Semana</th>
-                    <th>Plantel</th>
-                </tr>
-                <tr>
-                    <td>ASIGNACIÓN MÚLTIPLE</td>
-                    <td>LICENCIATURAS / BACHILLERATOS</td>
-                    <td id="fill-hours"></td>
-                    <td>DIVERSOS / UDAL</td>
-                </tr>
-            </table>
-            
-            <p><strong>2. ACTIVIDADES ACADÉMICAS ADICIONALES</strong></p>
-            <p>Marcar con una "X" las actividades convenidas:<br>
-            [ &nbsp; ] Asesoría de Tesis<br>
-            [ &nbsp; ] Participación en Cuerpos Colegiados<br>
-            [ &nbsp; ] Impartición de Cursos y/o Talleres</p>
-            
-            <p><strong>3. CONTRAPRESTACIÓN ECONÓMICA (HONORARIOS)</strong></p>
-            <p><strong>3.1. Por Hora-Clase (Carga Académica):</strong></p>
-            <p>La contraprestación que “LA INSTITUCIÓN” pagará a “EL PRESTADOR” por los servicios descritos en la tabla de Carga Académica será de <strong>$<span id="fill-rate"></span> M.N.</strong> por cada hora-clase, más el Impuesto al Valor Agregado (IVA) correspondiente.</p>
-            <p>Total Semanal Estimado: <strong>$<span id="fill-total"></span> M.N.</strong></p>
-            
-            <p><strong>3.2. Por Actividades Adicionales:</strong></p>
-            <p>Monto: $ _____________</p>
-            
-            <p>El pago de todos los honorarios se realizará de conformidad con los procedimientos administrativos y términos establecidos en la Cláusula Cuarta del Contrato.</p>
-            <p>Las partes manifiestan su conformidad con los términos descritos en el presente Anexo, el cual firman en la misma fecha que el Contrato principal.</p>
-
-            <div class="signatures-area">
-                <div class="sig-box">
-                    <br><br><br>
-                    <strong>ING. JESÚS LÓPEZ CHARGOY</strong><br>
-                    “LA INSTITUCIÓN”
-                </div>
-                <div class="sig-box">
-                    <img class="img-sig-main sig-img-target">
-                    <br><br><br>
-                    <strong class="fill-name" style="text-transform: uppercase;"></strong><br>
-                    “EL PRESTADOR”
+                <div class="signature-grid" style="margin-top: 40px;">
+                    <div class="sig-box">
+                        <strong>ING. JESÚS LÓPEZ CHARGOY</strong><br>“LA INSTITUCIÓN”
+                    </div>
+                    <div class="sig-box">
+                        <img class="signature-fill sig-main" src="">
+                        <strong id="c-name-sig-anexo" style="text-transform: uppercase;"></strong><br>“EL PRESTADOR”
+                    </div>
                 </div>
             </div>
         </div>
@@ -315,7 +357,6 @@
 </div>
 
 <script>
-    // DATA COMPLETA 214 DOCENTES
     const rawData = `1	75	ABAD DE PAZ DIEGO	24	1800
 2	56	AGUILA COLIN NANCY	10	560
 3	56	AGUILAR MONTIEL LUIS JESUS	12	672
@@ -542,14 +583,18 @@
         };
     });
 
-    let selected = null;
+    let selectedTeacher = null;
     let signaturePad = null;
     let pdfBlob = null;
 
     window.onload = function() {
         renderList(teachers);
         const canvas = document.getElementById('sig-canvas');
-        signaturePad = new SignaturePad(canvas, { penColor: 'black', minWidth: 2, maxWidth: 4 });
+        signaturePad = new SignaturePad(canvas, { 
+            penColor: '#0033cc', // COLOR AZUL BOLÍGRAFO
+            minWidth: 1,
+            maxWidth: 2.5
+        });
         window.addEventListener('resize', resizeCanvas);
         resizeCanvas();
     };
@@ -565,7 +610,7 @@
     }
 
     function renderList(list) {
-        const container = document.getElementById('teacher-list');
+        const container = document.getElementById('list-container');
         container.innerHTML = '';
         list.forEach(t => {
             const div = document.createElement('div');
@@ -576,82 +621,96 @@
         });
     }
 
-    function filterTeachers() {
-        const q = document.getElementById('search-input').value.toUpperCase();
-        renderList(teachers.filter(t => t.name.includes(q)));
+    function filterList() {
+        const query = document.getElementById('search-input').value.toUpperCase();
+        renderList(teachers.filter(t => t.name.includes(query)));
     }
 
-    function selectTeacher(t) {
-        selected = t;
-        document.getElementById('lbl-name').innerText = t.name;
-        // Limpiar
-        document.getElementById('inp-dom').value = '';
+    function selectTeacher(teacher) {
+        selectedTeacher = teacher;
+        document.getElementById('lbl-name').innerText = teacher.name;
+        document.getElementById('inp-address').value = '';
         document.getElementById('inp-rfc').value = '';
         document.getElementById('inp-curp').value = '';
-        signaturePad.clear();
-        showView('form');
-        setTimeout(resizeCanvas, 200);
+        showView('view-form');
+        setTimeout(() => { resizeCanvas(); signaturePad.clear(); }, 100);
     }
 
     function clearPad() { signaturePad.clear(); }
 
-    function showView(name) {
+    function showView(id) {
         document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-        document.getElementById('view-' + name).classList.add('active');
+        document.getElementById(id).classList.add('active');
         window.scrollTo(0,0);
     }
 
-    async function generatePDF() {
-        const dom = document.getElementById('inp-dom').value;
+    async function generateContract() {
+        const address = document.getElementById('inp-address').value;
         const rfc = document.getElementById('inp-rfc').value;
         const curp = document.getElementById('inp-curp').value;
 
-        if(!dom || !rfc || !curp || signaturePad.isEmpty()) {
-            alert("Faltan datos");
+        if(!address || !rfc || !curp || signaturePad.isEmpty()) {
+            alert("Completa todos los campos y firma.");
             return;
         }
 
-        // Llenar datos
-        document.querySelectorAll('.fill-name').forEach(e => e.innerText = selected.name);
-        document.querySelector('.fill-dom').innerText = dom;
-        document.querySelector('.fill-rfc').innerText = rfc;
-        document.querySelector('.fill-curp').innerText = curp;
-        document.getElementById('fill-hours').innerText = selected.hours;
-        document.getElementById('fill-rate').innerText = selected.rate;
-        document.getElementById('fill-total').innerText = selected.total;
+        document.getElementById('loader').style.display = 'flex';
 
-        // Firmas
-        const sigData = signaturePad.toDataURL();
-        document.querySelectorAll('.sig-img-target').forEach(img => img.src = sigData);
-
-        // Generar PDF
-        const element = document.getElementById('contract-content');
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF('p', 'pt', 'letter');
+        // 1. Llenar datos básicos
+        document.getElementById('c-name').innerText = selectedTeacher.name;
+        document.getElementById('c-name-sig').innerText = selectedTeacher.name;
+        document.getElementById('c-name-sig-anexo').innerText = selectedTeacher.name;
+        document.getElementById('c-address').innerText = address;
+        document.getElementById('c-rfc').innerText = rfc;
+        document.getElementById('c-curp').innerText = curp;
+        document.getElementById('c-hours').innerText = selectedTeacher.hours;
+        document.getElementById('c-rate').innerText = selectedTeacher.rate;
+        document.getElementById('c-total').innerText = selectedTeacher.total;
         
-        // Configuración para que quepa exacto
-        const pageHeight = doc.internal.pageSize.getHeight();
-        const pageWidth = doc.internal.pageSize.getWidth(); // 612pt
-        const margin = 36; // 0.5in
-        const contentWidth = pageWidth - (margin * 2); // 540pt
-        const srcWidth = 816; // Ancho del HTML
-        const scale = contentWidth / srcWidth;
+        // 2. Colocar firmas (TODAS: Principales)
+        const sigData = signaturePad.toDataURL();
+        document.querySelectorAll('.signature-fill').forEach(img => {
+            img.src = sigData;
+        });
+
+        // 3. Hack de visibilidad
+        const wrapper = document.getElementById('contract-wrapper');
+        wrapper.classList.add('generating');
+
+        // 4. GENERACIÓN PDF
+        const element = document.getElementById('contract-template');
+        const { jsPDF } = window.jspdf;
+        // IMPORTANT: USAMOS 'LEGAL' (OFICIO)
+        const doc = new jsPDF('p', 'pt', 'legal'); 
+        
+        const pageWidth = doc.internal.pageSize.getWidth(); 
+        const srcWidth = 816; 
+        const scaleFactor = pageWidth / srcWidth;
 
         await doc.html(element, {
             callback: function(doc) {
                 pdfBlob = doc.output('blob');
                 
                 const waNumber = "522221158614";
-                const msg = `Hola, soy el docente *${selected.name}* (ID: ${selected.id}). Adjunto mi contrato firmado.`;
+                const msg = `Hola, soy el docente *${selectedTeacher.name}* (ID: ${selectedTeacher.id}). Adjunto mi contrato firmado.`;
                 document.getElementById('wa-link').href = `https://wa.me/${waNumber}?text=${encodeURIComponent(msg)}`;
                 
                 downloadPDF();
-                showView('success');
+                
+                wrapper.classList.remove('generating');
+                document.getElementById('loader').style.display = 'none';
+                
+                showView('view-success');
             },
-            x: margin,
-            y: margin,
-            html2canvas: { scale: scale, windowWidth: srcWidth },
-            width: contentWidth,
+            // IMPORTANTE: margin:0 porque el div ya tiene padding interno
+            x: 0,
+            y: 0,
+            html2canvas: { 
+                scale: scaleFactor,
+                windowWidth: srcWidth,
+                useCORS: true 
+            },
+            width: srcWidth,
             windowWidth: srcWidth
         });
     }
@@ -661,7 +720,7 @@
             const url = URL.createObjectURL(pdfBlob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `Contrato_UDAL_${selected.name.replace(/\s+/g,'_')}.pdf`;
+            a.download = `Contrato_UDAL_${selectedTeacher.name.replace(/\s+/g,'_')}.pdf`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
