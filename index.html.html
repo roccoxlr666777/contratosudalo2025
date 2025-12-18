@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <title>Sistema Integral de Gestión de Talento UDAL</title>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
+    
+    <style>
+        :root {
+            --primary: #00205B;
+            --secondary: #A32429;
+            --accent: #BFA65A;
+            --bg: #f8f9fa;
+            --text: #333;
+        }
+        
+        * { box-sizing: border-box; }
+        
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: var(--bg);
+            margin: 0;
+            padding: 0;
+            color: var(--text);
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            min-height: 100vh;
+            box-shadow: 0 4px 25px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            z-index: 100;
+            background: white;
+        }
+        
+        /* Header APP */
+        header {
+            background: linear-gradient(135deg, var(--primary) 0%, #00153d 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-bottom: 4px solid var(--accent);
+        }
+        header h1 { margin: 0; font-size: 1.2rem; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; }
+        header p { margin: 5px 0 0; font-size: 0.8rem; opacity: 0.9; color: var(--accent); }
+
+        /* Vistas */
+        .view { display: none; padding: 20px; flex-grow: 1; }
+        .view.active { display: block; animation: fadeIn 0.4s ease-out; }
+
+        /* Buscador */
+        .search-container { position: sticky; top: 0; background: white; padding-bottom: 15px; z-index: 30; border-bottom: 1px solid #eee; }
+        input[type="text"] { width: 100%; padding: 14px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 1rem; transition: 0.3s; background: #fafafa; }
+        input[type="text"]:focus { border-color: var(--primary); outline: none; background: white; }
+        
+        .teacher-list { max-height: 55vh; overflow-y: auto; margin-top: 10px; }
+        .teacher-item { padding: 15px; border-bottom: 1px solid #eee; cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: 0.2s; background: white; }
+        .teacher-item:hover { background: #f0f4ff; padding-left: 20px; }
+        .teacher-item strong { color: var(--primary); font-size: 0.95rem; }
+
+        /* Formulario */
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 6px; font-weight: 600; color: var(--primary); font-size: 0.85rem; }
+        input.form-control { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; font-size: 0.95rem; }
+        
+        .auth-section {
+            background: #e8f0fe;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid var(--primary);
+        }
+
+        .signature-container { border: 2px dashed #bbb; border-radius: 8px; background: #fff; position: relative; height: 200px; touch-action: none; }
+        canvas { width: 100%; height: 100%; }
+        .clear-sig { position: absolute; top: 10px; right: 10px; background: #eee; border: none; padding: 5px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.8rem; }
+
+        /* Botones */
+        .btn { width: 100%; padding: 15px; border: none; border-radius: 8px; font-size: 0.95rem; font-weight: 700; cursor: pointer; text-transform: uppercase; margin-top: 10px; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:disabled { background: #ccc; cursor: not-allowed; }
+        .btn-whatsapp { background: #25D366; color: white; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .btn-secondary { background: white; color: #666; border: 2px solid #ddd; }
+
+        /* ----- ESTILOS DEL CONTRATO ----- */
+        #contract-wrapper {
+            position: absolute; top: 0; left: 0; z-index: -1; 
+            width: 816px; background: white; visibility: hidden; 
+        }
+        #contract-wrapper.generating { visibility: visible; }
+
+        #contract-template {
+            width: 816px; 
+            background: white; 
+            color: black;
+            font-family: 'Times New Roman', serif;
+            text-align: justify;
+            box-sizing: border-box;
+            padding: 0;
+        }
+
+        /* PAGINA 1: CONTRATO */
+        .pdf-page-contract {
+            width: 100%;
+            height: 1344px; /* Altura Oficio */
+            padding: 40px 50px; 
+            position: relative;
+            page-break-after: always;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* PAGINA 2: ANEXO */
+        .pdf-page-annex {
+            width: 100%;
+            height: 1344px;
+            padding: 40px 50px;
+            position: relative;
+            page-break-after: avoid; 
+            margin-bottom: 0;
+            padding-bottom: 0;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* FUENTE 11px */
+        .content-body {
+            font-size: 11px; 
+            line-height: 1.25; 
+        }
+        
+        p { margin: 0 0 6px 0; text-indent: 0; }
+        
+        .section-title { 
+            font-size: 11px; 
+            text-align: center; 
+            font-weight: bold; 
+            margin: 10px 0; 
+            text-transform: uppercase; 
+            letter-spacing: 1px;
+        }
+        
+        .contract-table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 10px; }
+        .contract-table th, .contract-table td { border: 1px solid black; padding: 4px; text-align: center; vertical-align: middle; }
+        
+        /* Contenedores de Firma */
+        .signature-grid { display: flex; justify-content: space-between; margin-top: 25px; text-align: center; width: 100%; font-size: 10px; }
+        .sig-box { width: 40%; border-top: 1px solid black; padding-top: 5px; position: relative; }
+        
+        /* Imágenes de Firma */
+        .signature-fill {
+            mix-blend-mode: multiply;
+            position: absolute;
+            z-index: 2000; 
+        }
+
+        /* Firma Principal (420px) */
+        .sig-main {
+            bottom: 0px; 
+            left: 50%;
+            transform: translateX(-50%);
+            width: 420px; 
+        }
+
+        .fill-data { font-weight: bold; text-transform: uppercase; }
+
+        #loader {
+            position: fixed; top:0; left:0; width:100%; height:100%;
+            background: rgba(0,0,0,0.8); z-index: 9999;
+            display: none; justify-content: center; align-items: center; color: white;
+            flex-direction: column;
+        }
+    </style>
+</head>
+<body>
+
+<div id="loader">
+    <div style="font-size: 40px;">⏳</div>
+    <h3>Generando PDF...</h3>
+</div>
+
+<div class="container">
+    <header>
+        <h1>UDAL | Gestión de Talento</h1>
+        <p>Contratación Docente 2025</p>
+    </header>
+
+    <div id="view-select" class="view active">
+        <div class="search-container">
+            <label>Paso 1: Identifícate</label>
+            <input type="text" id="search-input" placeholder="Escribe tus apellidos..." onkeyup="filterList()">
+        </div>
+        <div id="list-container" class="teacher-list"></div>
+    </div>
+
+    <div id="view-form" class="view">
+        <h3 style="text-align:center; color:var(--primary);">Verifica tus datos</h3>
+        <p style="text-align:center; color:#666; margin-bottom:20px;">Docente: <strong id="lbl-name"></strong></p>
+
+        <div class="auth-section">
+            <label style="color:#A32429;">🔒 Validación de Seguridad</label>
+            <p style="font-size:0.85rem; margin-bottom:10px;">Ingresa tu matrícula tal como aparece en tu evaluación docente para desbloquear el contrato.</p>
+            <div style="display:flex; gap:10px;">
+                <input type="password" id="inp-matricula" class="form-control" placeholder="Tu Matrícula">
+                <button class="btn btn-primary" style="margin:0; width:auto;" onclick="verifyTeacher()">Validar</button>
+            </div>
+        </div>
+
+        <div id="form-content" style="display:none; opacity:0.5; pointer-events:none;">
+            <div class="form-group">
+                <label>Domicilio Completo:</label>
+                <input type="text" id="inp-address" class="form-control" placeholder="Calle, Número, Colonia, Ciudad, CP">
+            </div>
+            <div class="form-group">
+                <label>RFC:</label>
+                <input type="text" id="inp-rfc" class="form-control" placeholder="AAAA000000XXX" style="text-transform: uppercase;">
+            </div>
+            <div class="form-group">
+                <label>CURP:</label>
+                <input type="text" id="inp-curp" class="form-control" placeholder="AAAA000000H..." style="text-transform: uppercase;">
+            </div>
+
+            <div class="form-group">
+                <label>Tu Firma (Requerida):</label>
+                <div class="signature-container">
+                    <canvas id="sig-canvas"></canvas>
+                    <button class="clear-sig" onclick="clearPad()">Borrar</button>
+                </div>
+                <small style="text-align:center; display:block; color:#888;">Firma dentro del recuadro</small>
+            </div>
+
+            <button class="btn btn-primary" id="btn-generate" onclick="generateContract()">Generar Contrato</button>
+        </div>
+        
+        <button class="btn btn-secondary" onclick="showView('view-select')">Regresar</button>
+    </div>
+
+    <div id="view-success" class="view" style="text-align:center;">
+        <h2 style="color:#25D366; font-size:2rem;">¡Listo!</h2>
+        <p>El contrato se ha descargado a tu dispositivo.</p>
+        
+        <div style="background:#fff3cd; color:#856404; padding:15px; border-radius:5px; margin:20px 0; text-align:left; font-size:0.9rem;">
+            <strong>PASO FINAL OBLIGATORIO:</strong><br>
+            1. Presiona el botón de WhatsApp abajo.<br>
+            2. En el chat, presiona el clip (📎) o signo de más (+).<br>
+            3. Selecciona el archivo PDF que se acaba de descargar y envíalo.
+        </div>
+        
+        <a id="wa-link" href="#" target="_blank" class="btn btn-whatsapp">
+            Enviar por WhatsApp
+        </a>
+        <button class="btn btn-secondary" onclick="downloadPDF()">Volver a Descargar PDF</button>
+    </div>
+</div>
+
+<div id="contract-wrapper">
+    <div id="contract-template">
+        
+        <div class="pdf-page-contract">
+            
+            <div style="text-align: center; font-weight: bold; margin-bottom: 10px; font-size: 11px;">
+                CONTRATO DE PRESTACIÓN DE SERVICIOS PROFESIONALES INDEPENDIENTES POR HONORARIOS
+            </div>
+            
+            <div class="content-body">
+                <p>QUE CELEBRAN, POR UNA PARTE, <strong>PROMOTORA DEL ARTE Y LA CULTURA DE PUEBLA, DIVISIÓN ESTUDIOS SUPERIORES A.C Y/O UDAL UNIVERSIDAD DE AMÉRICA LATINA</strong>, A LA QUE EN LO SUCESIVO SE LE DENOMINARÁ “LA INSTITUCIÓN”, REPRESENTADA EN ESTE ACTO POR EL RECTOR EL <strong>INGENIERO JESÚS LÓPEZ CHARGOY</strong>; Y POR LA OTRA PARTE, EL/LA C. <span id="c-name" class="fill-data"></span>, A QUIEN EN LO SUCESIVO SE LE DENOMINARÁ “EL PRESTADOR”, MISMOS QUE SE SOMETEN AL TENOR DE LAS SIGUIENTES DECLARACIONES Y CLÁUSULAS:</p>
+
+                <div class="section-title">D E C L A R A C I O N E S</div>
+                
+                <p><strong>I. DECLARA “LA INSTITUCIÓN”:</strong> Ser una Asociación Civil legalmente constituida de acuerdo a las leyes del país. Representada en este acto por el <strong>Ingeniero Jesús López Chargoy</strong>, persona que se encuentra facultada para celebrar y suscribir el presente contrato de conformidad con el Instrumento Notarial Número: 35923, Volumen CDXLVIII, de fecha 24 de Mayo de 1996, celebrado ante la fe del Licenciado Jorge Hernández Madrid, titular de la Notaría Pública Número 4 de la Ciudad Puebla, Puebla. Su Registro Federal de Contribuyentes es <strong>PAC960524FL3</strong>. Que tiene como fines dedicarse a toda clase de actividades relativas a la educación, a la investigación científica y a la difusión de la cultura y el deporte. Que para cumplir con sus fines, requiere temporalmente contar con los servicios de una persona física con la pericia y conocimientos necesarios, por lo que ha determinado contratar a “EL PRESTADOR” para llevar a cabo servicios no subordinados regidos por la legislación civil. Señala como domicilio legal para efectos de este contrato: El ubicado en 17 Poniente 309, Col. El Carmen, Puebla, Pue., independientemente de que los servicios contratados se presten en dicho domicilio o en planteles ubicados en 6 B Sur 3106, Ladrillera de Benítez; Calle 3 Sur 4116, Gabriel Pastor 1ra Secc; o Av. 25 Pte 315, Héroe de Nacozari, en Heroica Puebla de Zaragoza, Pue.</p>
+
+                <p><strong>II. DECLARA “EL PRESTADOR”:</strong> Ser una persona física en pleno ejercicio de sus derechos, con capacidad para celebrar el presente contrato. Contar con los conocimientos técnicos, teóricos, científicos y pedagógicos, así como la experiencia suficiente para desarrollar los servicios profesionales objeto del presente contrato. Estar registrado ante las autoridades fiscales con el Registro Federal de Contribuyentes (RFC) número <span id="c-rfc" class="fill-data"></span>, manifestando bajo protesta de decir verdad conocer y entender las obligaciones fiscales derivadas de su régimen. Que las actividades objeto del presente contrato no representan su única o principal fuente de ingresos. Señalar como su domicilio el ubicado en <span id="c-address" class="fill-data"></span>. Identificarse con identificación oficial que obra en su expediente docente número y contar con Clave Única de Registro de Población (CURP) <span id="c-curp" class="fill-data"></span>. Que reconoce y ratifica las firmas plasmadas digitalmente en el contrato como propias toda vez que es el medio elegido por ambas partes para facilidad y conveniencia.</p>
+
+                <p><strong>III. DECLARAN AMBAS PARTES:</strong> ÚNICO.- Que se reconocen mutuamente la personalidad y capacidad legal con la que comparecen, manifestando su consentimiento para obligarse en los términos de este contrato, cuyo contenido es producto de la buena fe.</p>
+
+                <div class="section-title">C L Á U S U L A S</div>
+
+                <p><strong>PRIMERA. OBJETO Y VIGENCIA.</strong> “LA INSTITUCIÓN” encomienda a “EL PRESTADOR”, y este se obliga a prestar sus servicios profesionales independientes de forma personal. Los servicios específicos, materias y actividades se detallan en el Anexo 1 de este contrato. La vigencia del presente instrumento será: <strong>Del día 18 de agosto de 2025 al 29 de enero de 2026.</strong> Al término de la vigencia, este contrato no se considerará renovado tácita ni automáticamente bajo ninguna circunstancia. La continuación de la prestación de servicios requerirá indispensablemente la celebración de un nuevo contrato.</p>
+
+                <p><strong>SEGUNDA. AUSENCIA DE VÍNCULO LABORAL.</strong> Ambas partes reconocen que el presente contrato es de naturaleza estrictamente civil. No establece ni genera una relación de trabajo subordinado. En consecuencia, “EL PRESTADOR” no será considerado trabajador para ningún efecto legal y no le son aplicables las disposiciones de la Ley Federal del Trabajo ni de la Ley del Instituto Mexicano del Seguro Social, por lo que no existe obligación recíproca alguna en materia de seguridad social.</p>
+
+                <p><strong>TERCERA. OBLIGACIONES DE “EL PRESTADOR”.</strong> “EL PRESTADOR” se obliga a: a) Desempeñar los servicios con la más alta diligencia, profesionalismo, ética y eficiencia, apegándose a los planes de estudio, calendarios y reglamentos internos de “LA INSTITUCIÓN”. b) Resguardar y supervisar el equipo, materiales y bienes que “LA INSTITUCIÓN” le facilite para el desempeño de sus servicios, asumiendo la responsabilidad de reponer cualquier pérdida o menoscabo que estos sufran por negligencia, dolo o mal uso de su parte. c) Abstenerse de organizar, promover o realizar actos ajenos a los fines académicos de “LA INSTITUCIÓN” dentro de sus instalaciones o utilizando su nombre. d) Cumplir cabalmente con las obligaciones que asuma como sinodal, asesor o miembro de cuerpos colegiados.</p>
+                
+                <p><strong>CUARTA. HONORARIOS Y FORMA DE PAGO.</strong> “LA INSTITUCIÓN” se compromete a pagar los honorarios pactados, previa entrega por parte de “EL PRESTADOR” del Comprobante Fiscal Digital por Internet (CFDI) correspondiente. Dicho pago se realizará siguiendo al pie de la letra el procedimiento, fechas y términos establecidos en el calendario de pagos que “EL PRESTADOR” manifiesta conocer, y siempre que el comprobante cumpla con todos los requisitos fiscales vigentes. “LA INSTITUCIÓN” efectuará las retenciones de impuestos que marque la legislación aplicable. En el supuesto de que “EL PRESTADOR” deje su carga académica o cause baja antes de la finalización del periodo contratado o de los periodos estipulados para la emisión de facturas, no podrá solicitar el pago de los honorarios pendientes de manera inmediata. De igual forma, si “EL PRESTADOR” no genera su CFDI a tiempo, no envía las correcciones solicitadas oportunamente o incumple de cualquier otra manera con el procedimiento de pago, la liquidación de los honorarios pendientes quedará sujeta al proceso, reprogramación y autorización de “LA INSTITUCIÓN”.</p>
+
+                <p><strong>QUINTA. AUTONOMÍA CONTRACTUAL</strong> La celebración del presente contrato no genera obligación alguna para “LA INSTITUCIÓN” de mantener o replicar las mismas condiciones (carga de materias/horas, monto de honorarios, etc.) en futuros periodos de contratación.</p>
+
+                <p><strong>SEXTA. CONFIDENCIALIDAD.</strong> “EL PRESTADOR” se obliga a guardar la más estricta confidencialidad respecto a la información interna, documentos, procedimientos, datos personales y/o sensibles a los que tenga acceso por motivo de este contrato. Esta obligación subsistirá aún después de haber finalizado la vigencia del presente instrumento.</p>
+
+                <p><strong>SÉPTIMA. CAUSAS DE RESCISIÓN.</strong> “LA INSTITUCIÓN” podrá rescindir administrativamente el presente contrato, sin necesidad de procedimiento judicial y sin responsabilidad alguna para ella, por cualquiera de las siguientes causas imputables a “EL PRESTADOR”: a) Prestar los servicios de forma inadecuada, deficiente o contraria a lo estipulado en este contrato, los reglamentos o la ética profesional. b) Suspender injustificadamente la prestación de los servicios. c) Incurrir en un evidente conflicto de intereses, como prestar servicios a instituciones competidoras sin autorización previa y por escrito. d) Presentar documentación o información falsa. e) Solicitar o recibir dinero, bienes o favores de los estudiantes a cambio de beneficios académicos. f) Incurrir en faltas de probidad, honradez o llevar a cabo actos que atenten contra el prestigio o la filosofía de “LA INSTITUCIÓN”. g) Estar involucrado, señalado o investigado por hechos o actos ilícitos o contrarios a la moral, independientemente de que se acredite o no su responsabilidad legal final en los mismos.</p>
+
+                <p><strong>OCTAVA. TERMINACIÓN ANTICIPADA.</strong> “LA INSTITUCIÓN” podrá dar por terminado anticipadamente el presente contrato en cualquier momento y sin necesidad de que medie resolución judicial o aviso previo, debiendo únicamente cubrir los honorarios que correspondan a los servicios efectivamente prestados y recibidos a su entera satisfacción. Por su parte, “EL PRESTADOR” podrá solicitar la terminación anticipada, previo aviso por escrito con al menos siete días naturales de anticipación, reservándose “LA INSTITUCIÓN” el derecho de aceptar dicha terminación.</p>
+
+                <p><strong>NOVENA. ACCIONES LEGALES Y JURISDICCIÓN.</strong> En caso de cualquier controversia judicial iniciada por “EL PRESTADOR”, “LA INSTITUCIÓN” se reserva el derecho de contrademandar por los daños y perjuicios que dicha acción le ocasione. Lo anterior, con independencia de las acciones civiles, penales o de cualquier otra índole que “LA INSTITUCIÓN” pueda iniciar en contra de “EL PRESTADOR” por incumplimiento del presente contrato. Para la interpretación y cumplimiento de este contrato, las partes se someten expresamente a la jurisdicción de los tribunales competentes de la Ciudad de Puebla, Puebla, renunciando a cualquier fuero que por razón de sus domicilios presentes o futuros pudiera corresponderles.</p>
+                
+                <p style="margin-top:15px;">Leído que fue este contrato por las partes y enteradas de su contenido y alcance, firman por duplicado en la ciudad de Puebla, Pue a los 18 días del mes de Agosto de 2025.</p>
+
+                <div class="signature-grid">
+                    <div class="sig-box">
+                        <strong>JESUS LÓPEZ CHARGOY</strong><br>“LA INSTITUCIÓN”
+                    </div>
+                    <div class="sig-box">
+                        <img class="signature-fill sig-main" src="">
+                        <strong id="c-name-sig" style="text-transform: uppercase;"></strong><br>“EL PRESTADOR”
+                    </div>
+                </div>
+                
+                <div class="signature-grid" style="margin-top:20px;">
+                    <div class="sig-box">
+                        <strong>JULIO CÉSAR GÓMEZ QUINTERO</strong><br>TESTIGO
+                    </div>
+                    <div class="sig-box">
+                        <strong>MIRNA LORENA GÓMEZ PÉREZ</strong><br>TESTIGO
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="pdf-page-annex">
+            
+            <div class="section-title">ANEXO 1<br>SERVICIOS PROFESIONALES Y HONORARIOS</div>
+            
+            <div class="content-body">
+                <p>El presente Anexo forma parte integral del Contrato de Prestación de Servicios Profesionales Independientes celebrado entre la “INSTITUCIÓN” y el “PRESTADOR” a quienes se hace referencia en dicho instrumento.</p>
+                
+                <p><strong>1. CARGA ACADÉMICA</strong></p>
+                <table class="contract-table">
+                    <tr>
+                        <th>Materia Asignada</th>
+                        <th>Nivel / Programa</th>
+                        <th>Horas por Semana</th>
+                        <th>Plantel</th>
+                    </tr>
+                    <tr>
+                        <td>ASIGNACIÓN MÚLTIPLE</td>
+                        <td>LICENCIATURAS</td>
+                        <td id="c-hours"></td>
+                        <td>DIVERSOS / UDAL</td>
+                    </tr>
+                </table>
+                
+                <p><strong>2. ACTIVIDADES ACADÉMICAS ADICIONALES</strong></p>
+                <p>Marcar con una "X" las actividades convenidas: [ ] Asesoría de Tesis [ ] Participación en Cuerpos Colegiados [ ] Impartición de Cursos y/o Talleres</p>
+                
+                <p><strong>3. CONTRAPRESTACIÓN ECONÓMICA (HONORARIOS)</strong></p>
+                <p><strong>3.1. Por Hora-Clase (Carga Académica):</strong> La contraprestación que “LA INSTITUCIÓN” pagará a “EL PRESTADOR” por los servicios descritos en la tabla de Carga Académica será de <strong>$<span id="c-rate"></span> M.N.</strong> por cada hora-clase, más el Impuesto al Valor Agregado (IVA) correspondiente. Total Semanal Estimado: <strong>$<span id="c-total"></span> M.N.</strong></p>
+                
+                <p><strong>3.2. Por Actividades Adicionales:</strong> Monto: $ 0</p>
+                
+                <p>El pago de todos los honorarios se realizará de conformidad con los procedimientos administrativos y términos establecidos en la Cláusula Cuarta del Contrato. Las partes manifiestan su conformidad con los términos descritos en el presente Anexo, el cual firman en la misma fecha que el Contrato principal.</p>
+
+                <div class="signature-grid" style="margin-top: 40px;">
+                    <div class="sig-box">
+                        <strong>ING. JESÚS LÓPEZ CHARGOY</strong><br>“LA INSTITUCIÓN”
+                    </div>
+                    <div class="sig-box">
+                        <img class="signature-fill sig-main" src="">
+                        <strong id="c-name-sig-anexo" style="text-transform: uppercase;"></strong><br>“EL PRESTADOR”
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    // Datos actualizados con Matrícula (Simulado desde CSV previo + datos financieros)
+    // ID	RATE	NAME	HOURS	TOTAL	MATRICULA
+    const rawData = `1	75	ABAD DE PAZ DIEGO	24	1800	2567
+2	56	AGUILA COLIN NANCY	10	560	2511
+3	56	AGUILAR MONTIEL LUIS JESUS	12	672	23539
+4	65	AGUIRRE SANTOS ABRIL DANAE	15	975	23545
+5	80	ALDACO LEZAMA MIRIAM	18	1440	2567
+6	85	ALMARAZ POLANCO GONZALO	18	1530	2125
+7	75	ARROYO VAZQUEZ SERGIO ARMANDO	7	525	2263
+8	80	AVILA DEL MORAL CARLOS	21	1680	2340
+9	70	AVILA JIMENEZ PATRICIA	20	1400	2435
+10	70	AVILA VIEYRA DIONICIO	20	1400	1089
+11	170	BAÑUELOS SANTANA ALMA CRISTINA	28	4760	23493
+12	100	BARRERA QUIROZ ROSA ARELY	16	1600	22336
+13	80	BARROETA GARDUÑO CHRYSTIAN	11	880	2679
+14	100	BERMÚDEZ VICTORIA LIZA ALEJANDRA	30	3000	2570
+15	75	BERNAL ARGUELLO MARISOL	20	1500	2422
+16	70	BERNAL QUIROZ MARTHA SILVIA	19	1330	888938
+17	90	BIVIANO PEREZ EMMA	18	1620	22336
+18	100	CABALLERO AGUILAR MONTSSERRAT	20	2000	2570
+19	60	CAMACHO MARTINEZ JUAN ANTONIO	9	540	2070
+20	60	CAMACHO PEREZ FRANCISCO	23	1380	23579
+21	100	CAMPOS PADILLA MARISOL	18	1800	2570
+22	80	CARMONA TREJO GLORIA	7	560	2625
+23	100	CARRASCO DUEÑAS MARTHA	16	1600	23399
+24	150	CASIANO MONTES ZURIHELLY	16	2400	23399
+25	100	CASTILLERO LÓPEZ ÁNGEL	58	5800	2557
+26	100	CASTILLO QUEVEDO MONICA MARIANA	20	2000	2570
+27	75	CASTRO JIMÉNEZ OMAR ARMANDO	7	525	2304
+28	75	CASTRO MARTINEZ JORDAN DANIEL	4	300	23492
+29	80	CHACÓN BALTAZAR PAOLA	11	880	23492
+30	60	CHENA GARCIA ERIKA ROSALBA	21	1260	23492
+31	56	CITALÁN RODRÍGUEZ JANETH	19	1064	23608
+32	56	CONTRERAS ARCE PAOLA	14	784	1496
+33	170	CONTRERAS DELGADILLO RITA	23	3910	23463
+34	70	CONTRERAS LEON LUIS ARMANDO	3	210	23463
+35	80	CORONA FUENTES AGUILAR LILIANA	4	320	2102
+36	56	CORONA GONZÁLEZ JESSEL	7	392	2102
+37	80	CORTES AMARO DAFNE MARIANA	20	1600	6571
+38	100	CORTES VITE ANDREW RAFAEL	20	2000	6571
+39	80	CUAUTLE XOCHIMITL ERIKA	20	1600	2410
+40	56	CUELLAR ORTEGA FERNANDO	19	1064	23601
+41	70	CUESTA SANCHEZ VLADIMIR	13	910	2281
+42	56	CULEBRO CAMACHO CLAUDIA ESTEFANIA	9	504	23576
+43	56	CULEBRO CAMACHO GLORIA	10	560	23575
+44	80	DANIEL ISLAS BEATRIZ	15	1200	2235
+45	150	DARVICH CAMARA SAMANTHA NATIVIDAD	35	5250	2572
+46	56	DAVILA ZUÑIGA LUISA FERNANDA	17	952	23615
+47	56	DE LA LUZ BRAVO GUADALUPE	20	1120	23586
+48	80	DIAZ LOPEZ MARIO MANUEL	9	720	1793
+49	100	DIAZ NAVA SANDRA	12	1200	1793
+50	70	DÍAZ ORTEGA JOSÉ MIGUEL	7	490	2572
+51	100	DIB VÁZQUEZ YAMILE	20	2000	2572
+52	70	DORANTES HERNANDEZ OSCAR SAUL	10	700	2568
+53	56	DORANTES MARTINEZ EDSON AARON	7	392	2568
+54	56	ESCAMILLA ANAYA JAIME ISRAEL	12	672	23523
+55	56	ESCAMILLA CORONA MARCO ANTONIO	3	168	888911
+56	100	ESTRADA CLARES PAMELA CECIL	18	1800	2560
+57	65	FERMIN MEJIA OSCAR	12	780	1463
+58	70	FERNANDEZ BARRANCO RICARDO	7	490	1463
+59	80	FLORES DIAZ ADRIANA	10	800	22306
+60	70	FUENTES MUÑOZ MARÍA REYNA	3	210	23532
+61	65	GALINDO SANCHEZ ROSA MARIA	5	325	2618
+62	100	GALLARDO CRUZ ARIATNA MERARI	20	2000	2618
+63	60	GAMBOA ROMERO JORGE LUIS	8	480	2545
+64	150	GARCIA PINEDA BLANCA SOL	32	4800	2589
+65	100	GIL VIVEROS CLAUDIA PENELOPE	15	1500	2145
+66	110	GOMEZ QUINTERO JULIO CESAR	43	4730	2218
+67	80	GOMEZ ZAMORA ALEJANDRO	23	1840	2670
+68	75	GONZALEZ AZUARA ARIS	18	1350	2678
+69	90	GONZALEZ CAMACHO PAMELA	26	2340	2348
+70	56	GONZALEZ LOPEZ ISAAC	15	840	23602
+71	65	GONZALEZ NUÑEZ ARMANDO	10	650	2365
+72	56	GONZALEZ SOTO PABLO	18	1008	2614
+73	56	GONZALEZ TEJEDA AUGUSTO	23	1288	23585
+74	70	GONZALEZ VARELA JORGE	14	980	2245
+75	65	GUTIERREZ GAONA CARLOS FELIPE	20	1300	1446
+76	60	HERNANDEZ CARRERA JOSE ANTONIO	19	1140	2335
+77	60	HERNANDEZ FLORES AMILCAR HEIMDALL	21	1260	2044
+78	80	HERNÁNDEZ HERNÁNDEZ MARÍA FERNANDA	19	1520	2593
+79	70	HERNÁNDEZ MERINO AYAX DE JESÚS	20	1400	2593
+80	60	HERNANDEZ ORTEGA JUAN PABLO	16	960	2527
+81	60	HERNANDEZ PEREZ DENI BERENISE	16	960	2527
+82	130	HERNÁNDEZ PÉREZ JORGE LUIS	24	3120	1063
+83	90	HERNÁNDEZ RIVEROLL MARTHA ANGÉLICA	11	990	2593
+84	56	HERNANDEZ SOLIS RAFAEL	15	840	2607
+85	70	HERNANDEZ TISCAREÑO MARIA CRISTINA	22	1540	1444
+86	85	HERNANDEZ VALDIVIA ALMA DELFINA	10	850	22358
+87	56	HUERTA TOBON MIRIAM	21	1176	2559
+88	60	IRENE AYLLON HAYDEE AZUCENA	20	1200	2559
+89	90	JAIME HERNANDEZ SILVIA	19	1710	23549
+90	95	JIMÉNEZ JIMÉNEZ FRANCISCO	22	2090	1027
+91	100	JIMÉNEZ MARTÍNEZ XIMENA IRAIS	18	1800	2546
+92	80	JIMÉNEZ MONTIEL OSVALDO	12	960	23539
+93	80	JIMENEZ RODRIGUEZ LIZETH	17	1360	2620
+94	100	JUÁREZ MIGNON NANCY	8	800	1446
+95	65	JULIAN MÁRQUEZ FELIPE	7	455	2670
+96	120	LEAL VARGAS ALFONSO	11	1320	2286
+97	60	LEON GONZALEZ MARIA FERNANDA	19	1140	2265
+98	75	LICEA HERRERA JOSÉ EDUARDO	19	1425	1081
+99	56	LOPEZ ALCANTARA FELIX	22	1232	2438
+100	70	LOPEZ GARCIA JORGE	14	980	2188
+101	60	LOPEZ HERNANDEZ ZAYRA	20	1200	23617
+102	150	LOPEZ MARTINEZ ANGÉLICA	26	3900	2419
+103	75	LOPEZ NIETO MARIO ALBERTO	7	525	2263
+104	150	LUNA DOMINGUEZ KATIA ELIA	32	4800	23519
+105	70	LUNA MORAN MARIA DE LOS ANGELES	9	630	2541
+106	70	MARIN MARIN ROBERTO GERARDO	21	1470	2243
+107	65	MARQUEZ MORA ARLETTE	18	1170	555972
+108	80	MARTÍNEZ AVILÉS MIROSLAVA	13	1040	1124
+109	80	MARTINEZ MEDINA JOSE MIGUEL	9	720	2235
+110	80	MARTÍNEZ PÉREZ MARIANA	18	1440	23531
+111	75	MAZÓ COLLADO LEILA KARINA	20	1500	1079
+112	60	MEJIA MARTINEZ ESTEFANI	10	600	2256
+113	80	MEZA CUATIANQUIZ JANET	4	320	2578
+114	80	MILLAN BUAUN IAN	16	1280	2572
+115	56	MONTES DANIEL ANDRES	19	1064	23601
+116	60	MORALES AYALA JOSE LUIS	21	1260	1526
+117	56	MORALES HERNANDEZ ANGEL	18	1008	2232
+118	56	MORALES MONTIEL BRENDA DANIELA	16	896	23616
+119	56	MORÁN MELÉNDEZ ALEXANDRA	12	672	23602
+120	56	MUÑOZ GONZÁLEZ JOSE RAFAEL	13	728	2555
+121	56	NAVARRO CARRILLO LUZ DEL CARMEN	6	336	23503
+122	80	NAVARRO MARTÍNEZ MARLENE	22	1760	2615
+123	70	OCOTOXTLE FLORES JOSUÉ ALBERTO	15	1050	2555
+124	56	OLIVARES HERNANDEZ RODOLFO CARLOS	23	1288	2598
+125	56	ORTEGA CUATECO FRANCISCO JAVIER	18	1008	23601
+126	70	OSORIO TESILLOS LOURDES MARIAN	9	630	2555
+127	75	PACHECO LIMA FRANCISCO JAVIER	15	1125	2237
+128	70	PADILLA CANCINO RUTH SKARLETTE	11	770	2237
+129	100	PALACIOS ORTIZ NASYA	20	2000	2583
+130	100	PALACIOS VARGAS ADRIANA	16	1600	2583
+131	80	PAYÁN GARCÍA NATALIA	17	1360	2583
+132	70	PEREZ CARRILLO LUISA FERNANDA	10	700	2604
+133	65	PEREZ CONCEPCIÓN ANAYELI	19	1235	2563
+134	70	PEREZ CONDE MIRLEY	23	1610	2563
+135	80	PEREZ GARCIA VICTOR FRANCISCO	18	1440	2514
+136	80	PÉREZ MONTES MONTSERRAT EVELYN	6	480	2673
+137	80	PÉREZ ORTEGA ANA CAROLINA	12	960	2616
+138	70	PEREZ ORTEGA JOSE GIOVANNY	30	2100	888935
+139	80	PÉREZ PORTILLO ESTELA	11	880	2577
+140	80	PEREZ RIVERA HILDA MARITZA	20	1600	2535
+141	70	PEREZ RODRIGUEZ GABRIEL CARMELO	17	1190	23386
+142	65	PINEDA MENDEZ BLANCA	21	1365	2279
+143	70	PINEDA ROSSAINZ JOSE CARLOS	12	840	2279
+144	70	PLAZA MONTAÑO RICARDO	18	1260	1256
+145	80	PLIEGO CERDÁN CAROLINE ITZEL	12	960	2612
+146	120	PORTILLO GÓMEZ CLAUDIA YAMILETH	20	2400	2620
+147	60	PULIDO HERNANDEZ GUADALUPE MARISOL	10	600	23399
+148	100	QUESADA RAMIREZ OKSANA ISABEL	3	300	2235
+149	70	QUIROZ BOLAÑOS ANNELISE	9	630	2670
+150	100	RAMÍREZ CUELLAR JULIO CESAR	37	3700	1155
+151	56	RAMIREZ HERNANDEZ ALDO	20	1120	23610
+152	70	RAMIREZ RAMOS MARIANA	20	1400	23546
+153	65	RAMOS DE GANTE RAUL ENRIQUE	19	1235	2553
+154	56	RAMOS RAMIREZ URIEL	7	392	2553
+155	100	RANGEL PACHECO VALERIA	16	1600	23546
+156	80	REYES CALDERON ERIKA CRISTINA	18	1440	23546
+157	56	REYES VALADEZ ADRIANA	8	448	23546
+158	65	RICAÑO ZETINA LORENA DEL CARMEN	14	910	2110
+159	60	RIESTRA ILLESCAS JOSE CARLOS	13	780	2110
+160	100	RODRIGUEZ BENITEZ VALERIA ALEJANDRA	20	2000	2542
+161	80	RODRIGUEZ JUAREZ KAREN ILIANA	18	1440	2542
+162	150	RODRÍGUEZ LÓPEZ NÉLYDA CRISTINA	28	4200	23534
+163	80	RODRIGUEZ MIRON CAROLINA	6	480	2243
+164	170	RODRIGUEZ MONTES MIRIAM	18	3060	23534
+165	70	RODRÍGUEZ SUÁREZ EMIRÉ BERTHA	4	280	23534
+166	70	ROJAS PARRA IVAN MOISES	12	840	2610
+167	110	ROLDÁN CANO DIEGO ELADIO	7	770	1280
+168	75	ROMO CAPULIN CLAUDIA	20	1500	2429
+169	60	ROSALES LOPEZ MONTSERRAT	19	1140	2429
+170	70	ROSAS PEREZ JESUS	11	770	1270
+171	100	ROSETE MARTINEZ ALMASANDRA	16	1600	23396
+172	100	SAAVEDRA GONZALEZ WILLIAMS GREGORI	3	300	23396
+173	60	SANCHEZ CARREON VANESA	20	1200	2606
+174	56	SÁNCHEZ CEDILLO EDUARDO	20	1120	2606
+175	80	SANCHEZ GIL DAFNE SCARLET	19	1520	2296
+176	60	SANCHEZ HERNANDEZ ISRAEL MAURICIO	14	840	2257
+177	75	SANCHEZ HERNANDEZ JOSE ARMANDO	11	825	2257
+178	65	SANCHEZ MUÑOZ ROSA ISELA	8	520	1434
+179	120	SANCHEZ VERA GABRIELA	20	2400	2449
+180	65	SANTIAGO RAMIREZ ATZEL	20	1300	23584
+181	56	SANTIAGO RAMIREZ MELANIE	9	504	22311
+182	56	SAYEG MORANCHEL JOSE ARTURO	15	840	2288
+183	70	SAYEG MORANCHEL VERÓNICA DEL CARMEN	12	840	1419
+184	65	SILVA LIMA GABRIEL	6	390	23613
+185	80	SOLIS GOMEZ BENJAMIN	16	1280	5555975
+186	75	SORIANO CUELLAR MIRIAM YEZARELA	16	1200	5555975
+187	56	SOSA CASTILLO RAFAEL	8	448	23611
+188	56	SOSA VAZQUEZ JOSUE FRANCISCO	14	784	23594
+189	70	SUAREZ CASTILLO RAFAEL ANTONIO	21	1470	2552
+190	80	SUAREZ ORTIZ BRENDA MARÍA	15	1200	2617
+191	60	TEPALCINGO CALVARIO GABRIELA	21	1260	2600
+192	80	TLILAYATZI VÁZQUEZ KARINA	18	1440	23430
+193	150	TOLENTINO ARANO DIANA	11	1650	2500
+194	60	TORRES CASTILLO MARIANA YOSELIN	20	1200	23418
+195	70	URIBE QUIJADA ALEJANDRO	4	280	23418
+196	65	VALDES CABRERA BLANCA GUADALUPE	21	1365	23522
+197	80	VALERIO LARA HECTOR	6	480	23522
+198	80	VARELA HERNANDEZ GABRIELA FERNANDA	15	1200	23443
+199	70	VARGAS HERNANDEZ HUGO ALFREDO	11	770	2301
+200	70	VARGAS HERNANDEZ SAYURI	13	910	2301
+201	100	VAZQUEZ DONADO JOSE EDUARDO	12	1200	2301
+202	60	VAZQUEZ FUENTES MARIA GUADALUPE	17	1020	2301
+203	100	VÁZQUEZ JIMÉNEZ ELENA	18	1800	2301
+204	150	VAZQUEZ MANCILLA BLANCA ALICIA	33	4950	2611
+205	80	VILLARREAL RUÍZ FRANCISCO	19	1520	2611
+206	60	VILLEGAS MARTINEZ IRANELI DOLORES	19	1140	2626
+207	100	VIRUENA POBLANO LESLIE EVELYN	3	300	2510
+208	56	ZACAULA HERNANDEZ CRISTINA	29	1624	23588
+209	90	ZAMORA VARELA YESSIKA	13	1170	2431
+210	100	ZARATE RAMIREZ ALINE	8	800	2431
+211	56	ZAYAS AVALOS ESTEFANY ANAHI	10	560	23609
+212	60	ZAYAS PLATAS ÁNGEL	10	600	1209
+213	150	ZENTENO ARENAS SARAI NADIEHZDA	19	2850	23462
+214	60	ZENTENO VERA MERCEDES PATRICIA	12	720	2543`;
+
+    const teachers = rawData.split('\n').map(line => {
+        const parts = line.split('\t');
+        return {
+            id: parts[0],
+            rate: parts[1],
+            name: parts[2],
+            hours: parts[3],
+            total: parts[4],
+            matricula: parts[5].trim() // Nuevo campo matrícula
+        };
+    });
+
+    let selectedTeacher = null;
+    let signaturePad = null;
+    let pdfBlob = null;
+
+    window.onload = function() {
+        renderList(teachers);
+        const canvas = document.getElementById('sig-canvas');
+        signaturePad = new SignaturePad(canvas, { 
+            penColor: '#0033cc', // COLOR AZUL
+            minWidth: 1,
+            maxWidth: 2.5
+        });
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+    };
+
+    function resizeCanvas() {
+        const canvas = document.getElementById('sig-canvas');
+        if(canvas.offsetWidth > 0) {
+            const ratio = Math.max(window.devicePixelRatio || 1, 1);
+            canvas.width = canvas.offsetWidth * ratio;
+            canvas.height = canvas.offsetHeight * ratio;
+            canvas.getContext("2d").scale(ratio, ratio);
+        }
+    }
+
+    function renderList(list) {
+        const container = document.getElementById('list-container');
+        container.innerHTML = '';
+        list.forEach(t => {
+            const div = document.createElement('div');
+            div.className = 'teacher-item';
+            div.innerHTML = `<strong>${t.name}</strong> <span>ID: ${t.id}</span>`;
+            div.onclick = () => selectTeacher(t);
+            container.appendChild(div);
+        });
+    }
+
+    function filterList() {
+        const query = document.getElementById('search-input').value.toUpperCase();
+        renderList(teachers.filter(t => t.name.includes(query)));
+    }
+
+    function selectTeacher(teacher) {
+        selectedTeacher = teacher;
+        document.getElementById('lbl-name').innerText = teacher.name;
+        document.getElementById('inp-address').value = '';
+        document.getElementById('inp-rfc').value = '';
+        document.getElementById('inp-curp').value = '';
+        document.getElementById('inp-matricula').value = '';
+        
+        // Resetear vista de formulario
+        document.getElementById('form-content').style.opacity = '0.5';
+        document.getElementById('form-content').style.pointerEvents = 'none';
+        
+        showView('view-form');
+        setTimeout(() => { resizeCanvas(); signaturePad.clear(); }, 100);
+    }
+
+    function verifyTeacher() {
+        const inputMatricula = document.getElementById('inp-matricula').value.trim();
+        
+        if (inputMatricula === selectedTeacher.matricula) {
+            // ÉXITO
+            document.getElementById('form-content').style.display = 'block';
+            document.getElementById('form-content').style.opacity = '1';
+            document.getElementById('form-content').style.pointerEvents = 'auto';
+            alert("✅ Matrícula verificada. Puede proceder a firmar.");
+        } else {
+            // ERROR
+            alert("❌ Matrícula incorrecta.\n\nPor favor comuníquese con el Mtro. Julio César Gómez Quintero.");
+        }
+    }
+
+    function clearPad() { signaturePad.clear(); }
+
+    function showView(id) {
+        document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        window.scrollTo(0,0);
+    }
+
+    async function generateContract() {
+        const address = document.getElementById('inp-address').value;
+        const rfc = document.getElementById('inp-rfc').value;
+        const curp = document.getElementById('inp-curp').value;
+
+        if(!address || !rfc || !curp || signaturePad.isEmpty()) {
+            alert("Completa todos los campos y firma.");
+            return;
+        }
+
+        document.getElementById('loader').style.display = 'flex';
+
+        // 1. Llenar datos básicos
+        document.getElementById('c-name').innerText = selectedTeacher.name;
+        document.getElementById('c-name-sig').innerText = selectedTeacher.name;
+        document.getElementById('c-name-sig-anexo').innerText = selectedTeacher.name;
+        document.getElementById('c-address').innerText = address;
+        document.getElementById('c-rfc').innerText = rfc;
+        document.getElementById('c-curp').innerText = curp;
+        document.getElementById('c-hours').innerText = selectedTeacher.hours;
+        document.getElementById('c-rate').innerText = selectedTeacher.rate;
+        document.getElementById('c-total').innerText = selectedTeacher.total;
+        
+        // 2. Colocar firmas
+        const sigData = signaturePad.toDataURL();
+        document.querySelectorAll('.signature-fill').forEach(img => {
+            img.src = sigData;
+        });
+
+        // 3. Hack de visibilidad
+        const wrapper = document.getElementById('contract-wrapper');
+        wrapper.classList.add('generating');
+
+        // 4. GENERACIÓN PDF
+        const element = document.getElementById('contract-template');
+        const { jsPDF } = window.jspdf;
+        // IMPORTANT: USAMOS 'LEGAL' (OFICIO)
+        const doc = new jsPDF('p', 'pt', 'legal'); 
+        
+        const pageWidth = doc.internal.pageSize.getWidth(); // 612pt
+        const srcWidth = 816; // Width en pixels
+        const scaleFactor = pageWidth / srcWidth;
+
+        await doc.html(element, {
+            callback: function(doc) {
+                pdfBlob = doc.output('blob');
+                
+                const waNumber = "522221158614";
+                const msg = `Hola, soy el docente *${selectedTeacher.name}* (ID: ${selectedTeacher.id}). Adjunto mi contrato firmado.`;
+                document.getElementById('wa-link').href = `https://wa.me/${waNumber}?text=${encodeURIComponent(msg)}`;
+                
+                downloadPDF();
+                
+                wrapper.classList.remove('generating');
+                document.getElementById('loader').style.display = 'none';
+                
+                showView('view-success');
+            },
+            // IMPORTANTE: margin:0 porque el div ya tiene padding interno
+            x: 0,
+            y: 0,
+            html2canvas: { 
+                scale: scaleFactor,
+                windowWidth: srcWidth,
+                useCORS: true 
+            },
+            width: srcWidth,
+            windowWidth: srcWidth
+        });
+    }
+
+    function downloadPDF() {
+        if(pdfBlob) {
+            const url = URL.createObjectURL(pdfBlob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Contrato_UDAL_${selectedTeacher.name.replace(/\s+/g,'_')}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+    }
+</script>
+
+</body>
+</html>
